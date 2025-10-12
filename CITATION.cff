@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Hanzi Writer"
+authors:
+  - family-names: "Chanin"
+    given-names: "David"
+    orcid: "https://orcid.org/0009-0004-6619-5469"
+repository-code: "https://github.com/chanind/hanzi-writer"
+abstract: "Hanzi Writer is a JavaScript library for Chinese character stroke order animations and practice quizzes"
+keywords:
+  - chinese
+  - hanzi
+  - javascript
+  - stroke-order
+  - animation
+license: MIT
+date-released: 2015-11-27
