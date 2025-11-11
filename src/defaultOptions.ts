@@ -40,6 +40,7 @@ const defaultOptions: HanziWriterOptions = {
   highlightCompleteColor: null,
   markStrokeCorrectAfterMisses: false,
   acceptBackwardsStrokes: false,
+  ignoreStrokeOrder: false,
   quizStartStrokeNum: 0,
   averageDistanceThreshold: 350,
 

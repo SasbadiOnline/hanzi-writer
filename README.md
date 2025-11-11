@@ -16,6 +16,22 @@ Hanzi Writer is a free and open-source javascript library for Chinese character 
 
 For more info and instructions on getting started check out https://chanind.github.io/hanzi-writer
 
+## Unordered Quiz Mode
+
+If you want quizzes to accept strokes in any order, enable `ignoreStrokeOrder` when starting a quiz:
+
+```js
+writer.quiz({
+  // other options as needed
+  ignoreStrokeOrder: true,
+});
+```
+
+Notes:
+- When enabled, a user stroke is matched against any remaining stroke.
+- `onMistake`/`onCorrectStroke` callbacks receive the matched `strokeNum` for the accepted/considered stroke.
+- `strokesRemaining` reflects undrawn strokes count rather than sequential order.
+
 ## Data source
 
 The chinese character svg and stroke order data used by Hanzi Writer is derived from the [Make me a Hanzi](https://github.com/skishore/makemeahanzi) project with some slight tweaks. The data can be found in the [Hanzi Writer Data](https://github.com/chanind/hanzi-writer-data) repo. There's a visualizer for this data [here](https://chanind.github.io/hanzi-writer-data).

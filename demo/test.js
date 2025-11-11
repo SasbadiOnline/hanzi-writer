@@ -53,6 +53,7 @@ window.onload = function () {
   document.querySelector('.js-quiz').addEventListener('click', function () {
     writer.quiz({
       showOutline: true,
+      ignoreStrokeOrder: true,
     });
   });
 };

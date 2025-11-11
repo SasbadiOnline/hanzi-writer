@@ -68,6 +68,8 @@ export type QuizOptions = {
   highlightOnComplete: boolean;
   /** Whether to treat strokes which are correct besides their direction as correct. */
   acceptBackwardsStrokes: boolean;
+  /** When true, accept any remaining stroke regardless of order. Default: false */
+  ignoreStrokeOrder: boolean;
   /** Begin quiz on this stroke number rather than stroke 0 */
   quizStartStrokeNum: number;
   /** After a user makes this many mistakes, just mark the stroke correct and move on. Default: false */

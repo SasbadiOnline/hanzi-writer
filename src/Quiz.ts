@@ -109,32 +109,65 @@ export default class Quiz {
       return;
     }
 
-    const { acceptBackwardsStrokes, markStrokeCorrectAfterMisses } = this._options!;
+    const { acceptBackwardsStrokes, markStrokeCorrectAfterMisses, ignoreStrokeOrder } = this._options!;
 
-    const currentStroke = this._getCurrentStroke();
-    const { isMatch, meta } = strokeMatches(
-      this._userStroke,
-      this._character,
-      this._currentStrokeIndex,
-      {
+    const computeMatch = (strokeIndex: number) =>
+      strokeMatches(this._userStroke!, this._character, strokeIndex, {
         isOutlineVisible: this._renderState.state.character.outline.opacity > 0,
         leniency: this._options!.leniency,
         averageDistanceThreshold: this._options!.averageDistanceThreshold,
-      },
-    );
+      });
+
+    const remainingIndices = ignoreStrokeOrder
+      ? this._getRemainingStrokeIndices()
+      : [this._currentStrokeIndex];
+
+    // Try to find a matching stroke among remaining
+    let selectedIndex = remainingIndices[0];
+    let matchResult = computeMatch(selectedIndex);
+    for (let i = 0; ignoreStrokeOrder && i < remainingIndices.length; i++) {
+      const idx = remainingIndices[i];
+      const res = computeMatch(idx);
+      if (res.isMatch) {
+        selectedIndex = idx;
+        matchResult = res;
+        break;
+      }
+      // keep meta updated to the last checked index for failure/hint context
+      selectedIndex = idx;
+      matchResult = res;
+    }
 
     // if markStrokeCorrectAfterMisses is passed, just force the stroke to count as correct after n tries
     const isForceAccepted =
       markStrokeCorrectAfterMisses &&
       this._mistakesOnStroke + 1 >= markStrokeCorrectAfterMisses;
 
+    // When unordered and none matched, pick the closest remaining stroke as hint/forced target
+    if (ignoreStrokeOrder && !matchResult.isMatch) {
+      let bestIdx = remainingIndices[0];
+      let bestDist = this._character.strokes[bestIdx].getAverageDistance(this._userStroke!.points);
+      for (let i = 1; i < remainingIndices.length; i++) {
+        const idx = remainingIndices[i];
+        const dist = this._character.strokes[idx].getAverageDistance(this._userStroke!.points);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = idx;
+        }
+      }
+      selectedIndex = bestIdx;
+      matchResult = computeMatch(selectedIndex);
+    }
+
+    const { isMatch, meta } = matchResult;
+
     const isAccepted =
       isMatch || isForceAccepted || (meta.isStrokeBackwards && acceptBackwardsStrokes);
 
     if (isAccepted) {
-      this._handleSuccess(meta);
+      this._handleSuccess(meta, selectedIndex);
     } else {
-      this._handleFailure(meta);
+      this._handleFailure(meta, selectedIndex);
 
       const {
         showHintAfterMisses,
@@ -148,7 +181,7 @@ export default class Quiz {
       ) {
         this._renderState.run(
           characterActions.highlightStroke(
-            currentStroke,
+            this._character.strokes[selectedIndex],
             colorStringToVals(highlightColor),
             strokeHighlightSpeed,
           ),
@@ -171,17 +204,24 @@ export default class Quiz {
   _getStrokeData({
     isCorrect,
     meta,
+    strokeIndex,
   }: {
     isCorrect: boolean;
     meta: StrokeMatchResultMeta;
+    strokeIndex?: number;
   }): StrokeData {
+    const idx = strokeIndex ?? this._currentStrokeIndex;
+    const useOrder = !this._options?.ignoreStrokeOrder;
+    const strokesRemaining = useOrder
+      ? this._character.strokes.length - this._currentStrokeIndex - (isCorrect ? 1 : 0)
+      : this._countRemainingStrokes() - (isCorrect ? 1 : 0);
+
     return {
       character: this._character.symbol,
-      strokeNum: this._currentStrokeIndex,
+      strokeNum: idx,
       mistakesOnStroke: this._mistakesOnStroke,
       totalMistakes: this._totalMistakes,
-      strokesRemaining:
-        this._character.strokes.length - this._currentStrokeIndex - (isCorrect ? 1 : 0),
+      strokesRemaining,
       drawnPath: getDrawnPath(this._userStroke!),
       isBackwards: meta.isStrokeBackwards,
     };
@@ -232,25 +272,77 @@ export default class Quiz {
     this._renderState.run(animation);
   }
 
-  _handleSuccess(meta: StrokeMatchResultMeta) {
+  _handleSuccess(meta: StrokeMatchResultMeta, strokeIndex?: number) {
     if (!this._options) return;
 
-    const { onCorrectStroke } = this._options;
+    const {
+      onCorrectStroke,
+      highlightOnComplete,
+      highlightCompleteColor,
+      highlightColor,
+      strokeHighlightDuration,
+      strokeFadeDuration,
+      onComplete,
+    } = this._options;
 
+    const idx = strokeIndex ?? this._currentStrokeIndex;
     onCorrectStroke?.({
-      ...this._getStrokeData({ isCorrect: true, meta }),
+      ...this._getStrokeData({ isCorrect: true, meta, strokeIndex: idx }),
     });
 
-    this.nextStroke();
+    // Reset mistakes after a successful stroke
+    this._mistakesOnStroke = 0;
+
+    if (this._options.ignoreStrokeOrder && strokeIndex !== undefined) {
+      // Draw the selected stroke and check for completion
+      let animation: GenericMutation[] = characterActions.showStroke(
+        'main',
+        idx,
+        strokeFadeDuration,
+      );
+
+      const isNowComplete = this._countRemainingStrokes() === 1; // this stroke will be drawn now
+      if (isNowComplete) {
+        this._isActive = false;
+        onComplete?.({ character: this._character.symbol, totalMistakes: this._totalMistakes });
+        if (highlightOnComplete) {
+          animation = animation.concat(
+            quizActions.highlightCompleteChar(
+              this._character,
+              colorStringToVals(highlightCompleteColor || highlightColor),
+              (strokeHighlightDuration || 0) * 2,
+            ),
+          );
+        }
+      }
+      this._renderState.run(animation);
+    } else {
+      this.nextStroke();
+    }
   }
 
-  _handleFailure(meta: StrokeMatchResultMeta) {
+  _handleFailure(meta: StrokeMatchResultMeta, strokeIndex?: number) {
     this._mistakesOnStroke += 1;
     this._totalMistakes += 1;
-    this._options!.onMistake?.(this._getStrokeData({ isCorrect: false, meta }));
+    this._options!.onMistake?.(
+      this._getStrokeData({ isCorrect: false, meta, strokeIndex }),
+    );
   }
 
   _getCurrentStroke() {
     return this._character.strokes[this._currentStrokeIndex];
+  }
+
+  _getRemainingStrokeIndices(): number[] {
+    const mainStrokes = this._renderState.state.character.main.strokes;
+    const indices: number[] = [];
+    for (let i = 0; i < this._character.strokes.length; i++) {
+      if (mainStrokes[i]?.opacity === 0) indices.push(i);
+    }
+    return indices;
+  }
+
+  _countRemainingStrokes(): number {
+    return this._getRemainingStrokeIndices().length;
   }
 }
