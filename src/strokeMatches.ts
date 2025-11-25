@@ -36,6 +36,7 @@ export default function strokeMatches(
     leniency?: number;
     isOutlineVisible?: boolean;
     averageDistanceThreshold?: number;
+    skipShapeFit?: boolean;
   } = {},
 ): StrokeMatchResult {
   const strokes = character.strokes;
@@ -161,6 +162,7 @@ const getMatchData = (
     isOutlineVisible?: boolean;
     checkBackwards?: boolean;
     averageDistanceThreshold?: number;
+    skipShapeFit?: boolean;
   },
 ): StrokeMatchResult & { avgDist: number } => {
   const {
@@ -168,6 +170,7 @@ const getMatchData = (
     isOutlineVisible = false,
     checkBackwards = true,
     averageDistanceThreshold = 350,
+    skipShapeFit = false,
   } = options;
   const avgDist = stroke.getAverageDistance(points);
   const distMod = isOutlineVisible || stroke.strokeNum > 0 ? 0.5 : 1;
@@ -178,7 +181,12 @@ const getMatchData = (
   }
   const startAndEndMatch = startAndEndMatches(points, stroke, leniency);
   const directionMatch = directionMatches(points, stroke);
-  const shapeMatch = shapeFit(points, stroke.points, leniency);
+  let shapeMatch = false;
+  if (skipShapeFit) {
+    shapeMatch = true;
+  } else {
+    shapeMatch = shapeFit(points, stroke.points, leniency);
+  }
   const lengthMatch = lengthMatches(points, stroke, leniency);
 
   const isMatch =

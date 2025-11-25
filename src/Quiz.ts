@@ -116,6 +116,7 @@ export default class Quiz {
         isOutlineVisible: this._renderState.state.character.outline.opacity > 0,
         leniency: this._options!.leniency,
         averageDistanceThreshold: this._options!.averageDistanceThreshold,
+        skipShapeFit: this._options!.skipShapeFit,
       });
 
     const remainingIndices = ignoreStrokeOrder

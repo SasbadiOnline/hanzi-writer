@@ -43,6 +43,7 @@ const defaultOptions: HanziWriterOptions = {
   ignoreStrokeOrder: false,
   quizStartStrokeNum: 0,
   averageDistanceThreshold: 350,
+  skipShapeFit: false,
 
   // undocumented obscure options
 

@@ -76,6 +76,8 @@ export type QuizOptions = {
   markStrokeCorrectAfterMisses: number | false;
   /** bigger = more lenient */
   averageDistanceThreshold: number;
+  /** When true, skip the shape fit check during stroke matching. This makes stroke matching more lenient by only checking distance, direction, and length. Default: false */
+  skipShapeFit: boolean;
   onMistake?: (strokeData: StrokeData) => void;
   onCorrectStroke?: (strokeData: StrokeData) => void;
   /** Callback when the quiz completes */

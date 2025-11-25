@@ -32,6 +32,25 @@ Notes:
 - `onMistake`/`onCorrectStroke` callbacks receive the matched `strokeNum` for the accepted/considered stroke.
 - `strokesRemaining` reflects undrawn strokes count rather than sequential order.
 
+## Skip Shape Fit Option
+
+If you want to make stroke matching more lenient by skipping the shape similarity check, enable `skipShapeFit` when starting a quiz:
+
+```js
+writer.quiz({
+  // other options as needed
+  skipShapeFit: true,
+});
+```
+
+When enabled, stroke matching will only check distance, direction, and length, while bypassing the shape fit check. This makes the quiz more lenient for users who may draw strokes with slightly different shapes but correct overall structure.
+
+This is particularly useful for characters with circular or curved strokes, such as:
+- Alphabet letters: "O", "o", "Q"
+- Numbers: "8", "0"
+
+For more details, see the [skipShapeFit documentation](docs/skipShapeFit.md).
+
 ## Data source
 
 The chinese character svg and stroke order data used by Hanzi Writer is derived from the [Make me a Hanzi](https://github.com/skishore/makemeahanzi) project with some slight tweaks. The data can be found in the [Hanzi Writer Data](https://github.com/chanind/hanzi-writer-data) repo. There's a visualizer for this data [here](https://chanind.github.io/hanzi-writer-data).
