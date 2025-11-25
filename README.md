@@ -65,6 +65,46 @@ yarn install
 
 You can run tests with `yarn test` and you can build the project with `yarn build`.
 
+### Building on Windows PowerShell
+
+If you're using Windows PowerShell, the build script uses Unix commands that may not work directly. Here are the steps to build the project:
+
+1. **Install dependencies** (if not already done):
+   ```powershell
+   yarn install
+   # or
+   npm install
+   ```
+
+2. **Build the project**:
+   
+   Option A - Using npm/yarn (recommended):
+   ```powershell
+   npm run build
+   # or
+   yarn build
+   ```
+   
+   Option B - Manual PowerShell commands:
+   ```powershell
+   # Remove the dist directory if it exists
+   if (Test-Path dist) { Remove-Item -Recurse -Force dist }
+   
+   # Run the build
+   npx rollup -c
+   # or
+   yarn rollup -c
+   ```
+
+3. **Run tests**:
+   ```powershell
+   npm test
+   # or
+   yarn test
+   ```
+
+**Note**: If you encounter issues with the build script, you may need to manually delete the `dist` folder before running the build command, as the `rm -rf` command in the build script may not work in PowerShell.
+
 ## License
 
 Hanzi Writer is released under an [MIT](https://raw.githubusercontent.com/chanind/hanzi-writer/master/LICENSE) license.
